@@ -1,5 +1,15 @@
 import base64
 import requests
+import configparser
+
+# configparser
+config = configparser.ConfigParser()
+config.read_file(open("config/config.cfg"))
+
+client_key = config['TWITTER']['CLIENT_KEY']
+client_secret = config['TWITTER']['CLIENT_SECRET']
+access_token_key = config['TWITTER']['ACCESS_TOKEN_KEY']
+access_token_secret = config['TWITTER']['ACCESS_TOKEN_SECRET']
 
 
 key_secret = '{}:{}'.format(client_key, client_secret).encode('ascii')
@@ -45,5 +55,7 @@ tweet_data = search_resp.json()
 for tweet in tweet_data:
     date = tweet['created_at']
     text = tweet['text']
-
-    print("Created at: {} \n Tweet: {}".format(str(date), str(text)))
+    try:
+        print("Created at: {} \n Tweet: {}".format(str(date), str(text.encode('utf-8'))))
+    except ValueError as e:
+        print(e)
