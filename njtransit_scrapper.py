@@ -52,46 +52,64 @@ def authorization_token():
     return search_headers
 
 
+def last_tweet(cur, conn):
+
+    cur.execute(tweets_alert_select)
+    id_tweet = cur.fetchone()
+    conn.commit()
+
+    return id_tweet[0]
+
+
 def tweets_request(cur, conn, authorization, search_parameters):
 
     search_url = 'https://api.twitter.com/1.1/statuses/user_timeline.json'
     search_resp = requests.get(search_url, headers=authorization, params=search_parameters)
 
-    # print(search_resp.status_code)
-
     tweet_data = search_resp.json()
 
-    print("Inserting {} values into tweets_alert table\n".format(len(tweet_data)))
+    len_data = len(tweet_data)
 
-    for tweet in tweet_data:
+    if len_data > 0:
 
-        date = parse(tweet['created_at'])
-        timestamp = time.mktime(date.timetuple())
-        tweet = tweet['text'].encode('utf-8')
+        print("Inserting {} values into tweets_alert table\n".format(len_data))
 
-        tweet_data = (timestamp, date, date.year, date.month, date.day, tweet)
+        for tweet in tweet_data:
 
-        try:
-            cur.execute(tweets_alert_insert, tweet_data)
-        except ValueError as e:
-            print(e)
+            date = parse(tweet['created_at'])
+            timestamp = time.mktime(date.timetuple())
+            text = tweet['text'].encode('utf-8')
 
-    print("Finished")
-    conn.commit()
+            tweet_data = (timestamp, date, date.year, date.month, date.day, tweet['id_str'], text)
+
+            try:
+                cur.execute(tweets_alert_insert, tweet_data)
+            except ValueError as e:
+                print(e)
+
+        print("Finished")
+        conn.commit()
+    else:
+        print("\nThere's no new tweets to insert")
 
 
 def main():
     conn = psycopg2.connect("host=127.0.0.1 dbname=njtransit user=student password=student")
     cur = conn.cursor()
 
-    # seach parameters for tweets
+    # searching for last tweet id in dabatase
+    id_last_tweet = last_tweet(cur, conn)
+
+    # seach parameters for tweets using last tweet id. This will works to not duplicate data
     search_parameters = {
         'screen_name': 'NJTRANSIT_NEC',
-        'count': 100,
+        'since_id': id_last_tweet,
+        'count': 200,
         'include_rts': False
     }
 
     tweets_request(cur, conn, authorization_token(), search_parameters)
+    conn.close()
 
 
 if __name__ == '__main__':
