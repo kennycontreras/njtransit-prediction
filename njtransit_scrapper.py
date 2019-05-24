@@ -65,7 +65,12 @@ def tweets_request(cur, conn, authorization, search_parameters):
 
     for tweet in tweet_data:
 
-        tweet_data = (parse(str(tweet['created_at'])), str(tweet['text'].encode('utf-8')))
+        date = parse(tweet['created_at'])
+        timestamp = time.mktime(date.timetuple())
+        tweet = tweet['text'].encode('utf-8')
+
+        tweet_data = (timestamp, date, date.year, date.month, date.day, tweet)
+
         try:
             cur.execute(tweets_alert_insert, tweet_data)
         except ValueError as e:
@@ -82,7 +87,7 @@ def main():
     # seach parameters for tweets
     search_parameters = {
         'screen_name': 'NJTRANSIT_NEC',
-        'count': 1,
+        'count': 100,
         'include_rts': False
     }
 
