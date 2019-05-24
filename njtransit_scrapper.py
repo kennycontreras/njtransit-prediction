@@ -2,6 +2,8 @@ import base64
 import requests
 import configparser
 import psycopg2
+import time
+import ciso8601
 from datetime import datetime
 from dateutil.parser import parse
 from sql_queries import *
@@ -50,7 +52,7 @@ def authorization_token():
     return search_headers
 
 
-def tweets_request(cur, authorization, search_parameters):
+def tweets_request(cur, conn, authorization, search_parameters):
 
     search_url = 'https://api.twitter.com/1.1/statuses/user_timeline.json'
     search_resp = requests.get(search_url, headers=authorization, params=search_parameters)
@@ -59,15 +61,18 @@ def tweets_request(cur, authorization, search_parameters):
 
     tweet_data = search_resp.json()
 
+    print("Inserting {} values into tweets_alert table\n".format(len(tweet_data)))
+
     for tweet in tweet_data:
+
         tweet_data = (parse(str(tweet['created_at'])), str(tweet['text'].encode('utf-8')))
-        print(tweet_data)
-        cur.execute(tweets_alert_insert, tweet_data)
-        # try:
-        #     cur.execute(tweets_alert_insert, (date, text))
-        #     # print("Created at: {} \n Tweet: {}".format(date, text))
-        # except ValueError as e:
-        #     print(e)
+        try:
+            cur.execute(tweets_alert_insert, tweet_data)
+        except ValueError as e:
+            print(e)
+
+    print("Finished")
+    conn.commit()
 
 
 def main():
@@ -77,11 +82,11 @@ def main():
     # seach parameters for tweets
     search_parameters = {
         'screen_name': 'NJTRANSIT_NEC',
-        'count': 100,
+        'count': 1,
         'include_rts': False
     }
 
-    tweets_request(cur, authorization_token(), search_parameters)
+    tweets_request(cur, conn, authorization_token(), search_parameters)
 
 
 if __name__ == '__main__':
