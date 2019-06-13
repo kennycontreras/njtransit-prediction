@@ -94,7 +94,8 @@ def tweets_request(cur, conn, authorization, search_parameters):
 
 
 def main():
-    conn = psycopg2.connect("host=127.0.0.1 dbname=njtransit user=student password=student")
+    conn = psycopg2.connect(
+        "host=104.198.175.246 dbname=njtransit user=postgres password=yssKdiFqqsGcPFfN")
     cur = conn.cursor()
 
     # searching for last tweet id in dabatase
