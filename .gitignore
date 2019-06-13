@@ -7,7 +7,7 @@ config/
 *.pyc
 *.DS_Store
 dwh_init.cfg
-*.ipynb
+
 
 # Compiled source #
 *.com
